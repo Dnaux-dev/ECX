@@ -19,9 +19,19 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
-// Routes
+// Auth routes
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+
+// JWT middleware example
+const auth = require('./middleware/auth');
+app.get('/api/private', auth(), (req, res) => {
+  res.json({ message: `Hello, ${req.user.role}!` });
+});
+
+// Default route
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to ECX Project API' });
+  res.json({ message: 'Welcome to the Job Board API with ATS System' });
 });
 
 // Start server
