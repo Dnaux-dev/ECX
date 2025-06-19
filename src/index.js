@@ -23,6 +23,10 @@ mongoose.connect(process.env.MONGODB_URI)
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
+// Job routes
+const jobRoutes = require('./routes/jobs');
+app.use('/api/jobs', jobRoutes);
+
 // JWT middleware example
 const auth = require('./middleware/auth');
 app.get('/api/private', auth(), (req, res) => {
