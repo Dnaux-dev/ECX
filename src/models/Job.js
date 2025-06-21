@@ -6,6 +6,11 @@ const jobSchema = new mongoose.Schema({
   location: { type: String, required: true },
   salary: { type: Number, required: true },
   company: { type: String, required: true },
+  jobType: {
+    type: String,
+    required: true,
+    enum: ['full-time', 'part-time', 'contract']
+  },
   createdAt: { type: Date, default: Date.now },
   employer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 });

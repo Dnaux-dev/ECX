@@ -5,7 +5,7 @@ const router = express.Router();
 
 // Create a job (employer only)
 router.post('/', auth('employer'), async (req, res) => {
-  const { title, description, location, salary, company } = req.body;
+  const { title, description, location, salary, company, jobType } = req.body;
   try {
     const job = await Job.create({
       title,
@@ -13,6 +13,7 @@ router.post('/', auth('employer'), async (req, res) => {
       location,
       salary,
       company,
+      jobType,
       employer: req.user.userId
     });
     res.status(201).json(job);
@@ -21,10 +22,59 @@ router.post('/', auth('employer'), async (req, res) => {
   }
 });
 
-// Get all jobs (public)
+// Get all jobs (public) - with filtering, sorting, and pagination
 router.get('/', async (req, res) => {
-  const jobs = await Job.find().populate('employer', 'username');
-  res.json(jobs);
+  const { jobType, location, minSalary, maxSalary, sortBy, page = 1, limit = 10 } = req.query;
+
+  const filters = {};
+
+  if (jobType) {
+    filters.jobType = jobType;
+  }
+
+  if (location) {
+    filters.location = { $regex: location, $options: 'i' };
+  }
+
+  if (minSalary || maxSalary) {
+    filters.salary = {};
+    if (minSalary) {
+      filters.salary.$gte = Number(minSalary);
+    }
+    if (maxSalary) {
+      filters.salary.$lte = Number(maxSalary);
+    }
+  }
+
+  const sortOptions = {};
+  if (sortBy === 'date') {
+    sortOptions.createdAt = -1;
+  } else if (sortBy === 'salary') {
+    sortOptions.salary = -1;
+  } else {
+    sortOptions.createdAt = -1; // Default sort
+  }
+
+  try {
+    const totalJobs = await Job.countDocuments(filters);
+    const totalPages = Math.ceil(totalJobs / limit);
+    const currentPage = Number(page);
+
+    const jobs = await Job.find(filters)
+      .populate('employer', 'username')
+      .sort(sortOptions)
+      .skip((currentPage - 1) * limit)
+      .limit(Number(limit));
+
+    res.json({
+      totalJobs,
+      totalPages,
+      currentPage,
+      jobs
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to retrieve jobs', details: err.message });
+  }
 });
 
 // Get a single job (public)
