@@ -43,31 +43,118 @@ exports.applyToJob = async (req, res) => {
   }
 };
 
-// GET /applications/mine (applicant only)
+// GET /applications/mine (applicant only) - Enhanced with status tracking
 exports.getMyApplications = async (req, res) => {
   try {
     const applications = await Application.find({ applicant: req.user.userId })
-      .populate('job')
+      .populate('job', 'title company location salary jobType')
       .sort({ submittedAt: -1 });
-    res.json({ applications });
+
+    // Add metadata
+    const totalApplications = applications.length;
+    const statusCounts = {
+      pending: applications.filter(app => app.status === 'pending').length,
+      shortlisted: applications.filter(app => app.status === 'shortlisted').length,
+      rejected: applications.filter(app => app.status === 'rejected').length,
+      hired: applications.filter(app => app.status === 'hired').length
+    };
+
+    res.json({
+      success: true,
+      data: {
+        applications,
+        metadata: {
+          totalApplications,
+          statusCounts
+        }
+      }
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch applications', details: err.message });
   }
 };
 
-// GET /applications/for-job/:jobId (employer only)
+// GET /applications/for-job/:jobId (employer only) - Enhanced with applicant details
 exports.getApplicationsForJob = async (req, res) => {
   try {
     const job = await Job.findById(req.params.jobId);
-    if (!job) return res.status(404).json({ error: 'Job not found' });
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+    
     if (job.employer.toString() !== req.user.userId) {
       return res.status(403).json({ error: 'Not authorized to view applications for this job' });
     }
+
     const applications = await Application.find({ job: job._id })
-      .populate('applicant', 'username')
+      .populate('applicant', 'username email')
       .sort({ submittedAt: -1 });
-    res.json({ applications });
+
+    // Add metadata
+    const totalApplications = applications.length;
+    const statusCounts = {
+      pending: applications.filter(app => app.status === 'pending').length,
+      shortlisted: applications.filter(app => app.status === 'shortlisted').length,
+      rejected: applications.filter(app => app.status === 'rejected').length,
+      hired: applications.filter(app => app.status === 'hired').length
+    };
+
+    res.json({
+      success: true,
+      data: {
+        job: {
+          id: job._id,
+          title: job.title,
+          company: job.company
+        },
+        applications,
+        metadata: {
+          totalApplications,
+          statusCounts
+        }
+      }
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch applications', details: err.message });
+  }
+};
+
+// PUT /applications/:applicationId/status (employer only) - Update application status
+exports.updateApplicationStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const { applicationId } = req.params;
+
+    if (!['pending', 'shortlisted', 'rejected', 'hired'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be one of: pending, shortlisted, rejected, hired' });
+    }
+
+    const application = await Application.findById(applicationId)
+      .populate('job', 'employer title');
+
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    if (application.job.employer.toString() !== req.user.userId) {
+      return res.status(403).json({ error: 'Not authorized to update this application' });
+    }
+
+    application.status = status;
+    await application.save();
+
+    res.json({
+      success: true,
+      message: `Application status updated to ${status}`,
+      data: {
+        application: {
+          id: application._id,
+          status: application.status,
+          jobTitle: application.job.title
+        }
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update application status', details: err.message });
   }
 }; 

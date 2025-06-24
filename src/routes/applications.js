@@ -24,4 +24,7 @@ router.get('/mine', auth('jobseeker'), applicationsController.getMyApplications)
 // View applications for a job (employer only)
 router.get('/for-job/:jobId', auth('employer'), applicationsController.getApplicationsForJob);
 
+// Update application status (employer only)
+router.put('/:applicationId/status', auth('employer'), applicationsController.updateApplicationStatus);
+
 module.exports = router; 

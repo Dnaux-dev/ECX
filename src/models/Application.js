@@ -5,7 +5,12 @@ const applicationSchema = new mongoose.Schema({
   job: { type: mongoose.Schema.Types.ObjectId, ref: 'Job', required: true },
   resumePath: { type: String, required: true },
   coverLetterPath: { type: String },
-  submittedAt: { type: Date, default: Date.now }
+  submittedAt: { type: Date, default: Date.now },
+  status: {
+    type: String,
+    enum: ['pending', 'shortlisted', 'rejected', 'hired'],
+    default: 'pending'
+  }
 });
 
 // Prevent duplicate applications by the same user to the same job

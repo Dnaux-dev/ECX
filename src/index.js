@@ -31,8 +31,12 @@ app.use('/api/jobs', jobRoutes);
 const applicationsRoutes = require('./routes/applications');
 app.use('/applications', applicationsRoutes);
 
-// JWT middleware example
+// Direct route for my-applications (applicant only)
 const auth = require('./middleware/auth');
+const applicationsController = require('./controllers/applications');
+app.get('/my-applications', auth('jobseeker'), applicationsController.getMyApplications);
+
+// JWT middleware example
 app.get('/api/private', auth(), (req, res) => {
   res.json({ message: `Hello, ${req.user.role}!` });
 });

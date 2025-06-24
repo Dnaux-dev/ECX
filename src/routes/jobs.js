@@ -1,6 +1,7 @@
 const express = require('express');
 const auth = require('../middleware/auth');
-const jobsController = require('../controllers/jobs/');
+const jobsController = require('../controllers/jobs');
+const applicationsController = require('../controllers/applications');
 const router = express.Router();
 
 // Create a job (employer only)
@@ -11,6 +12,9 @@ router.get('/', jobsController.getJobs);
 
 // Get a single job (public)
 router.get('/:id', jobsController.getJob);
+
+// Get applications for a specific job (employer only)
+router.get('/:jobId/applications', auth('employer'), applicationsController.getApplicationsForJob);
 
 // Update a job (employer only, only owner)
 router.put('/:id', auth('employer'), jobsController.updateJob);
