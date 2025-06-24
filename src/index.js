@@ -27,6 +27,10 @@ app.use('/api/auth', authRoutes);
 const jobRoutes = require('./routes/jobs');
 app.use('/api/jobs', jobRoutes);
 
+// Applications routes
+const applicationsRoutes = require('./routes/applications');
+app.use('/applications', applicationsRoutes);
+
 // JWT middleware example
 const auth = require('./middleware/auth');
 app.get('/api/private', auth(), (req, res) => {

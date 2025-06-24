@@ -1,122 +1,21 @@
 const express = require('express');
-const Job = require('../models/Job');
 const auth = require('../middleware/auth');
+const jobsController = require('../controllers/jobs');
 const router = express.Router();
 
 // Create a job (employer only)
-router.post('/', auth('employer'), async (req, res) => {
-  const { title, description, location, salary, company, jobType } = req.body;
-  try {
-    const job = await Job.create({
-      title,
-      description,
-      location,
-      salary,
-      company,
-      jobType,
-      employer: req.user.userId
-    });
-    res.status(201).json(job);
-  } catch (err) {
-    res.status(400).json({ error: 'Failed to create job', details: err.message });
-  }
-});
+router.post('/', auth('employer'), jobsController.createJob);
 
 // Get all jobs (public) - with filtering, sorting, and pagination
-router.get('/', async (req, res) => {
-  const { jobType, location, minSalary, maxSalary, sortBy, page = 1, limit = 10 } = req.query;
-
-  const filters = {};
-
-  if (jobType) {
-    filters.jobType = jobType;
-  }
-
-  if (location) {
-    filters.location = { $regex: location, $options: 'i' };
-  }
-
-  if (minSalary || maxSalary) {
-    filters.salary = {};
-    if (minSalary) {
-      filters.salary.$gte = Number(minSalary);
-    }
-    if (maxSalary) {
-      filters.salary.$lte = Number(maxSalary);
-    }
-  }
-
-  const sortOptions = {};
-  if (sortBy === 'date') {
-    sortOptions.createdAt = -1;
-  } else if (sortBy === 'salary') {
-    sortOptions.salary = -1;
-  } else {
-    sortOptions.createdAt = -1; // Default sort
-  }
-
-  try {
-    const totalJobs = await Job.countDocuments(filters);
-    const totalPages = Math.ceil(totalJobs / limit);
-    const currentPage = Number(page);
-
-    const jobs = await Job.find(filters)
-      .populate('employer', 'username')
-      .sort(sortOptions)
-      .skip((currentPage - 1) * limit)
-      .limit(Number(limit));
-
-    res.json({
-      totalJobs,
-      totalPages,
-      currentPage,
-      jobs
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to retrieve jobs', details: err.message });
-  }
-});
+router.get('/', jobsController.getJobs);
 
 // Get a single job (public)
-router.get('/:id', async (req, res) => {
-  try {
-    const job = await Job.findById(req.params.id).populate('employer', 'username');
-    if (!job) return res.status(404).json({ error: 'Job not found' });
-    res.json(job);
-  } catch {
-    res.status(400).json({ error: 'Invalid job ID' });
-  }
-});
+router.get('/:id', jobsController.getJob);
 
 // Update a job (employer only, only owner)
-router.put('/:id', auth('employer'), async (req, res) => {
-  try {
-    const job = await Job.findById(req.params.id);
-    if (!job) return res.status(404).json({ error: 'Job not found' });
-    if (job.employer.toString() !== req.user.userId) {
-      return res.status(403).json({ error: 'Not authorized to edit this job' });
-    }
-    Object.assign(job, req.body);
-    await job.save();
-    res.json(job);
-  } catch (err) {
-    res.status(400).json({ error: 'Failed to update job', details: err.message });
-  }
-});
+router.put('/:id', auth('employer'), jobsController.updateJob);
 
 // Delete a job (employer only, only owner)
-router.delete('/:id', auth('employer'), async (req, res) => {
-  try {
-    const job = await Job.findById(req.params.id);
-    if (!job) return res.status(404).json({ error: 'Job not found' });
-    if (job.employer.toString() !== req.user.userId) {
-      return res.status(403).json({ error: 'Not authorized to delete this job' });
-    }
-    await job.deleteOne();
-    res.json({ message: 'Job deleted' });
-  } catch (err) {
-    res.status(400).json({ error: 'Failed to delete job', details: err.message });
-  }
-});
+router.delete('/:id', auth('employer'), jobsController.deleteJob);
 
 module.exports = router; 
