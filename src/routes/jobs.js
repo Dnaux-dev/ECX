@@ -1,6 +1,6 @@
 const express = require('express');
 const auth = require('../middleware/auth');
-const jobsController = require('../controllers/jobs');
+const jobsController = require('../controllers/jobs/');
 const router = express.Router();
 
 // Create a job (employer only)
