@@ -3,7 +3,7 @@ const applicationsController = require('../controllers/applications');
 const auth = require('../middleware/auth');
 const upload = require('../config/multer');
 const validate = require('../middleware/validate');
-const { applyToJob } = require('../utils/validators/applicationValidator');
+const { applyToJob, updateStatus } = require('../utils/validators/applicationValidator');
 
 const router = express.Router();
 
@@ -25,6 +25,6 @@ router.get('/mine', auth('jobseeker'), applicationsController.getMyApplications)
 router.get('/for-job/:jobId', auth('employer'), applicationsController.getApplicationsForJob);
 
 // Update application status (employer only)
-router.put('/:applicationId/status', auth('employer'), applicationsController.updateApplicationStatus);
+router.put('/:applicationId/status', auth('employer'), validate(updateStatus), applicationsController.updateApplicationStatus);
 
 module.exports = router; 

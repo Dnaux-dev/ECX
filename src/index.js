@@ -46,6 +46,10 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Job Board API with ATS System' });
 });
 
+// Centralized error handler
+const errorHandler = require('./middleware/errorHandler');
+app.use(errorHandler);
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

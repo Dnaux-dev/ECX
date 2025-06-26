@@ -56,6 +56,24 @@ A modern web application backend built with Node.js and Express.
 - `GET /`: Welcome message
 - More endpoints coming soon...
 
+## Validation & Error Handling
+- All major endpoints use Joi validation for request bodies and parameters.
+- Centralized error handler returns consistent error responses with proper status codes.
+
+## Running Tests
+You can add automated tests using Jest and Supertest:
+
+1. Install dev dependencies:
+   npm install --save-dev jest supertest
+
+2. Create a `tests/` directory and add test files (e.g., auth.test.js, jobs.test.js).
+
+3. Add a test script to your package.json:
+   "test": "jest"
+
+4. Run tests:
+   npm test
+
 ## License
 
 ISC 

@@ -2,9 +2,11 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const validate = require('../middleware/validate');
+const { register, login } = require('../utils/validators/userValidator');
 const router = express.Router();
 
-router.post('/register', async (req, res) => {
+router.post('/register', validate(register), async (req, res) => {
   const { username, password, role } = req.body;
   if (!['jobseeker', 'employer'].includes(role)) return res.status(400).json({ error: 'Invalid role' });
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -20,7 +22,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', validate(login), async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username });
   if (!user) return res.status(400).json({ error: 'Invalid credentials' });
